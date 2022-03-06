@@ -30,6 +30,9 @@ int main(int argc, char* argv[]) {
     //variable para cargar el comando de generar las subcarpetas
     char *comando = malloc(sizeof(char)*256);
     
+    //creamos las carpetas
+    system("mkdir ./carpetas");
+
     //revisaremos cada linea para sacar el DNI
     while(fgets(linea_fichero, 100, estudiantes_archivo) != NULL) {
         

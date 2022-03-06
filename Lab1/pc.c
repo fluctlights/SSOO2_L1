@@ -7,7 +7,8 @@
 #include <time.h>
 #include <string.h>
 #include <ctype.h>
-#include<sys/stat.h>
+#include <sys/stat.h>
+#include <signal.h>
 
 #define NOTA_NECESARIA "La nota que debes obtener en este nuevo examen para superar la prueba es "
 #define NOTA_GLOBAL "La nota media de la clase es: "
@@ -16,6 +17,7 @@
 void comandosNecesarios(char* dni, char* modelo, char* nota);
 int leerLineas(char *archivo);
 int existeArchivo(char *archivo);
+void manejador(int signum);
 
 int main(int argc, char* argv[]) {
     
@@ -32,6 +34,8 @@ int main(int argc, char* argv[]) {
 
     //abrir fichero
     FILE *estudiantes_archivo = fopen("estudiantes.txt", "r");
+
+    signal(SIGUSR1, manejador);
 
     //si hay algun error al abrir el archivo salimos
     if(estudiantes_archivo == NULL){
@@ -70,16 +74,19 @@ int main(int argc, char* argv[]) {
                 linea_fichero_dividida = strtok(NULL, " ");
             }
 
-        //ejecutamos los comandos necesarios para cada usuario
-        comandosNecesarios(dni_alumno, modelo_examen, nota_examen);
+            //ejecutamos los comandos necesarios para cada usuario
+            comandosNecesarios(dni_alumno, modelo_examen, nota_examen);
 
-        //metemos la nota cada alumno dentro de la acumulada
-        nota_acumulada += atoi(nota_examen); 
+            //metemos la nota cada alumno dentro de la acumulada
+            nota_acumulada += atoi(nota_examen); 
 
-        //reiniciamos los valores
-        dni_alumno="";
-        modelo_examen="";
-        nota_examen=""; 
+            //reiniciamos los valores
+            dni_alumno="";
+            modelo_examen="";
+            nota_examen=""; 
+
+            //pruebas para PD
+            pause();
 
         }
     }
@@ -100,6 +107,7 @@ int main(int argc, char* argv[]) {
 
     write(atoi(argv[3]), nota_clase, sizeof(char)*256);
     //salimos, ya hemos terminado
+
     exit(EXIT_SUCCESS);
 }
 
@@ -180,4 +188,14 @@ int existeArchivo(char* archivo){
         return 1;
     else  
         return 0;
+}
+
+void manejador(int signum) {
+    switch(signum) {
+        case SIGUSR1:
+            printf("PD me ha ordenado salir, asi que salgo....\n");
+            exit(EXIT_SUCCESS);
+            break;
+    }
+
 }

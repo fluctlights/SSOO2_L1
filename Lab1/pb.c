@@ -64,6 +64,8 @@ int main(int argc, char* argv[]) {
             //ejecuto en shell
             system(comando);
 
+            //pruebas para PD
+            pause();
         }
     }
 
