@@ -8,21 +8,26 @@
 #include <string.h>
 #include <signal.h>
 
-#define CIFRAS_DNI 8
+#define BORRAR_INFO "rm -R ./info_estudiantes"
 
 int main(int argc, char* argv[]) {
     
+    /*para recogida de procesos*/
     int i=0;
     pid_t pids[3];
-    //variables para guardar el comando que borra la informacion
-    char *comando = "rm -R ./carpetas";
+    
+    /*recoger pa, pb, pc de argv*/
+    for(i=0; i<3; i++) {
+        pids[i] = atoi(argv[i+1]);
+    }
 
-    //terminamos los procesos PB y PC, de la tabla de procesos
-    kill(pids[1], SIGUSR1);
-    kill(pids[2], SIGUSR1);
+    /*terminamos los procesos PB y PC, de la tabla de procesos*/
+    kill(pids[2], SIGINT);
+    kill(pids[3], SIGINT);
 
-    //borrar informacion de los alumnos (./carpetas)
-    system(comando);
-    //salimos, ya hemos terminado
+    /*borrar informacion de los alumnos (./carpetas)*/
+    system(BORRAR_INFO);
+
+    /*salimos*/
     exit(EXIT_SUCCESS);
 }

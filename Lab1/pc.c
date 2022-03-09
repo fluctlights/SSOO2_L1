@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <sys/wait.h>
+#include <sys/signal.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <sys/types.h>
@@ -21,44 +22,44 @@ void manejador(int signum);
 
 int main(int argc, char* argv[]) {
     
-    //sacar lineas de fichero, para saber los estudiantes que hay
+    /*sacar lineas de fichero, para saber los estudiantes que hay*/
     int n_estudiantes = leerLineas("estudiantes.txt");
     
-    //cerramos la tuberia de lectura, solo vamos a escribir...
-    //close(atoi(argv[2]));
+    /*cerramos la tuberia de lectura, solo vamos a escribir...*/
+    close(atoi(argv[2]));
 
-    //Variables para guardar nota acumulada de todos los estudiantes, para hacer la media luego
+    /*Variables para guardar nota acumulada de todos los estudiantes, para hacer la media luego*/
     double nota_acumulada;
     char *nota_clase = malloc(sizeof(char)*256);
     char *buffer = malloc(sizeof(char)*256);
 
-    //abrir fichero
+    /*abrir fichero*/
     FILE *estudiantes_archivo = fopen("estudiantes.txt", "r");
 
-    signal(SIGUSR1, manejador);
+    signal(SIGINT, manejador);
 
-    //si hay algun error al abrir el archivo salimos
+    /*si hay algun error al abrir el archivo salimos*/
     if(estudiantes_archivo == NULL){
         printf("El fichero %s NO existe!", argv[1]);
         exit(EXIT_FAILURE);
     }
 
-    //variables necesarias para el manejo de fichero
+    /*variables necesarias para el manejo de fichero*/
     char linea_fichero[256];
-    char *linea_fichero_dividida; //esta variable tendra cada linea cortada
+    char *linea_fichero_dividida = malloc(sizeof(char)*256); /*esta variable tendra cada linea cortada*/
     int i = 0;
     char *dni_alumno;
     char *modelo_examen;
     char *nota_examen;
     
-    //revisaremos linea por linea
-    while(fgets(linea_fichero, 100, estudiantes_archivo) != NULL) {
+    /*revisaremos linea por linea*/
+    while(fgets(linea_fichero, 256, estudiantes_archivo) != NULL) {
 
         linea_fichero_dividida = strtok(linea_fichero, " ");
-        i = 0; //restablecemos la posicion de i para poder manejar cada trozo de linea
+        i = 0; /*restablecemos la posicion de i para poder manejar cada trozo de linea*/
 
         while(linea_fichero_dividida != NULL) {
-            while(i < 3) { //tenemos 3 partes en cada linea de fichero (0,1,2)
+            while(i < 3) { /*tenemos 3 partes en cada linea de fichero (0,1,2)*/
                 switch(i) {
                     case 0:
                         dni_alumno = linea_fichero_dividida;
@@ -74,40 +75,44 @@ int main(int argc, char* argv[]) {
                 linea_fichero_dividida = strtok(NULL, " ");
             }
 
-            //ejecutamos los comandos necesarios para cada usuario
+            /*ejecutamos los comandos necesarios para cada usuario*/
             comandosNecesarios(dni_alumno, modelo_examen, nota_examen);
 
-            //metemos la nota cada alumno dentro de la acumulada
+            /*metemos la nota cada alumno dentro de la acumulada*/
             nota_acumulada += atoi(nota_examen); 
 
-            //reiniciamos los valores
+            /*reiniciamos los valores*/
             dni_alumno="";
             modelo_examen="";
-            nota_examen=""; 
+            nota_examen="";
 
-            //pruebas para PD
-            pause();
+            /*pruebas para PD*/
+            
 
         }
     }
-    //cerramos el achivo
+    /*cerramos el achivo*/
     fclose(estudiantes_archivo);
 
-    //hacemos media de la clase
+    /*hacemos media de la clase*/
     nota_acumulada = (nota_acumulada/n_estudiantes);
     sprintf(buffer, "%1.2f", nota_acumulada);
     sprintf(nota_clase, NOTA_GLOBAL);
     strcat(nota_clase, buffer);
 
-    //pruebas
-    printf("%s\n", nota_clase);
-    //exit(0); 
+    /*pruebas para arrancar PD*/
+    sleep(50);
 
-    //pasamos la nota media global al manager con una tuberia
-
+    /*pasamos la nota media global al manager con una tuberia*/
     write(atoi(argv[3]), nota_clase, sizeof(char)*256);
-    //salimos, ya hemos terminado
+    /*salimos, ya hemos terminado*/
+    
+    /*liberamos recursos*/
+    free(nota_clase);
+    free(buffer);
+    free(linea_fichero_dividida);
 
+    /*terminamos*/
     exit(EXIT_SUCCESS);
 }
 
@@ -115,24 +120,24 @@ void comandosNecesarios(char *dni, char* modelo_examen, char* nota) {
     
     char *comando = malloc(sizeof(char)*256);
     char *comando_touch = malloc(sizeof(char)*256);
-    char *comando_dividido;
+    char *comando_dividido = malloc(sizeof(char)*256);
     int i;
     char *directorio = malloc(sizeof(char)*256);
     char *frase = malloc(sizeof(char)*150);
     char nota_necesaria_char[20];
     char *borrado = malloc(sizeof(char)*256);
     
-    //genero el comando para crear el fichero donde metemos la nota necesaria
-    sprintf(comando,"touch ./carpetas/");        
+    /*genero el comando para crear el fichero donde metemos la nota necesaria*/
+    sprintf(comando,"touch ./info_estudiantes/");        
     
-    //le meto el dni necesario
+    /*le meto el dni necesario*/
     strcat(comando, dni);
     strcat(comando, "/nota_necesaria.txt");
     sprintf(comando_touch, "%s", comando);
     
-    if(existeArchivo(comando) == 0) { //el archivo ya existe
+    if(existeArchivo(comando) == 0) { /*el archivo ya existe*/
 
-        //recojo el directorio como tal, que esta presente en el segundo trozo de strtok
+        /*recojo el directorio como tal, que esta presente en el segundo trozo de strtok*/
         comando_dividido = strtok(comando, " ");
     
         i = 0;
@@ -140,33 +145,35 @@ void comandosNecesarios(char *dni, char* modelo_examen, char* nota) {
             if(i==1)
                 sprintf(directorio, "%s",comando_dividido);
             i++;
-            comando_dividido = strtok(NULL, " "); //siguiente trozo
+            comando_dividido = strtok(NULL, " "); /*siguiente trozo*/
         }
         sprintf(borrado, "rm ");
         strcat(borrado, directorio);
         strcat(borrado, " >/dev/null 2>&1");
         system(borrado);
     }
-    //ejecuto el comando
+    /*ejecuto el comando*/
     system(comando_touch);
 
-    //saco la nota necesaria, y genero el text completo para cada archivo
+    /*saco la nota necesaria, y genero el text completo para cada archivo*/
     int nota_necesaria = NOTA_MAX - atoi(nota);
     sprintf(nota_necesaria_char, "%d", nota_necesaria);
     sprintf(frase, NOTA_NECESARIA);
     strcat(frase, nota_necesaria_char);
 
-    //comenzamos rellenando parte del comando para introducir la frase deseada en el archivo
+    /*comenzamos rellenando parte del comando para introducir la frase deseada en el archivo*/
     sprintf(comando, "echo \"%s\" >> %s", frase, directorio);
 
-    //ejecutamos
+    /*ejecutamos*/
     system(comando);
 
-    //liberamos memoria asignada
+    /*liberamos memoria asignada*/
     free(comando);
     free(comando_dividido);
+    free(comando_touch);
     free(directorio);
     free(borrado);
+    free(frase);
 }
 
 int leerLineas(char *archivo) {
@@ -192,10 +199,8 @@ int existeArchivo(char* archivo){
 
 void manejador(int signum) {
     switch(signum) {
-        case SIGUSR1:
-            printf("PD me ha ordenado salir, asi que salgo....\n");
+        case SIGINT:
+            printf("Soy PC y PD me ha ordenado salir, asi que salgo....\n");
             exit(EXIT_SUCCESS);
-            break;
     }
-
 }

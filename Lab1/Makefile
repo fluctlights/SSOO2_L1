@@ -1,34 +1,13 @@
-DIROBJ := obj/
-DIREXE := exec/
-DIRHEA := include/
-DIRSRC := src/
 
-CFLAGS := -I$(DIRHEA) -c -Wall -ansi
-LDLIBS := -lpthread -lrt
-CC := gcc
+all : manager pa pb pc pd
 
-all : dirs manager pa pb
-
-dirs:
-	mkdir -p $(DIROBJ) $(DIREXE)
-
-manager: $(DIROBJ)manager.o 
-	$(CC) -o $(DIREXE)$@ $^ $(LDLIBS)
-
-pa: $(DIROBJ)pa.o 
-	$(CC) -o $(DIREXE)$@ $^ $(LDLIBS)
-
-pb: $(DIROBJ)pb.o 
-	$(CC) -o $(DIREXE)$@ $^ $(LDLIBS)
-
-$(DIROBJ)%.o: $(DIRSRC)%.c
-	$(CC) $(CFLAGS) $^ -o $@
+manager: gcc manager.c -o manager
+pa: gcc pa.c -o pa
+pb: gcc pb.c -o pb
+pc: gcc pc.c -o pc
+pd: gcc pd.c -o pd
+daemon: gcc daemon.c -o daemon
 
 test:
-	./$(DIREXE)manager 3 2 5
+	./manager
 
-solution:
-	./$(DIREXE)manager 2 3 4
-
-clean : 
-	rm -rf *~ core $(DIROBJ) $(DIREXE) $(DIRHEA)*~ $(DIRSRC)*~
